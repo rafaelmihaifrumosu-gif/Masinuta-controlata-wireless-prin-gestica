@@ -6,7 +6,7 @@ F_CPU = 16000000UL
 
 # Programmer Settings
 PROGRAMMER = arduino
-PORT = /dev/ttyUSB0
+PORT = COM5
 #BAUD = 57600
 BAUD = 115200
 
