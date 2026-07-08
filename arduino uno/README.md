@@ -1,0 +1,159 @@
+# Sistem-Automat-de-Irigare-pentru-Plante
+
+Acest repository este dedicat dezvoltării unui sistem inteligent de irigare automatizată, conceput pentru gestionarea eficientă a udării plantelor la scară mică.
+
+Proiectul utilizează o arhitectură de tip Master-Slave bazată pe două plăci Arduino (Arduino Uno; Arduino Nano), care colaborează pentru a monitoriza și controla în timp real umiditatea solului.
+Scopul principal al sistemului este menținerea unei umidități optime a solului pentru a susține sănătatea plantelor, reducând în același timp intervenția omului.
+Prin folosirea senzorilor de umiditate, a unui sistem de distribuție a apei și a unui display pentru afișarea datelor relevante, utilizatorul beneficiază de o soluție eficientă și ușor de utilizat.
+
+Repository-ul conține codul sursă, documentația și resursele necesare pentru înțelegerea, reproducerea și extinderea acestui sistem.
+
+## Descărcare software pentru monitorizare
+
+[![Download](https://img.shields.io/badge/⬇-Download_Software-success?style=for-the-badge)](https://github.com/razvanstefandima-11/Sistem-Automat-de-Irigare-pentru-Plante/releases/tag/1.0.1)
+
+## Specificații
+
+ - **Fără Librării Arduino**: Manipulare directă a regiștrilor (register manipulation) pentru control total asupra hardware-ului și eficiență maximă a resurselor.
+ - **BSP (Board Support Package)**: Mapare hardware specifică pentru Arduino Uno (Master) și Arduino Nano (Slave).
+ - **Drivere**: Arhitectură modulară, documentată și reutilizabilă pentru perifericele ATmega328P:
+
+    - **GPIO:** Inițializare, Write (Pompe, LED, Buzzer), Read (Senzor Ultrasonic), Toggle (LED Alarma).
+    - **Interrupts:** Gestionarea ecoului de la HC-SR04 și a comunicației I2C prin vectori de întrerupere.
+    - **Timer:** System Tick de 1ms folosind Timer0 în mod CTC (pentru cronometrarea alarmei de 60s).
+    - **EEPROM:** Salvarea pragurilor de umiditate (Read/Write) pentru a nu pierde setările la pană de curent.
+    - **ADC:** Conversie pe 10-biți în mod blocking pentru citirea celor 3 senzori de umiditate capacitivi.
+    - **I2C (TWI):** Driver pentru comunicarea Master (Uno) - Slave (Nano) și controlul display-ului LCD 1602.
+    - **UART (USART):** Comunicație serială pentru debugging, monitorizare în timp real și afișarea valorilor senzorilor în Serial Monitor.
+    - **LCD 1602:** Driver pentru afișarea nivelului de umiditate, stării pompelor, mesajelor de avertizare și meniului de configurare.
+    - **Buzzer:** Generarea alertelor sonore pentru nivel scăzut al apei și stări critice ale sistemului.
+    - **Pump Control:** Driver pentru controlul pompelor prin relee.
+    - **Button/Input Driver:** Debouncing software și detectarea apăsărilor pentru navigarea prin meniul de configurare.
+    - **Alarm Manager:** Gestionarea condițiilor de alarmă și sincronizarea semnalizării LED/Buzzer.
+     
+  - **Sistem de Build Robust**: Utilizarea Makefile pentru automatizarea proceselor de compilare, link-editare și scriere (flash) via avrdude.
+
+## Diagrama Arhitectura
+
+```mermaid
+flowchart LR
+
+%% ========== SENSORS ==========
+subgraph SENSORS
+    S1[Soil Moisture Sensor 1]
+    S2[Soil Moisture Sensor 2]
+    S3[Soil Moisture Sensor 3]
+    WL[Water Level Sensor]
+    BTN[User Buttons]
+end
+
+%% ========== MASTER ==========
+subgraph MASTER["Arduino Uno (MASTER)"]
+    ADC[ADC Driver]
+    CTRL[Control Logic / Alarm Manager]
+    EEPROM[(EEPROM Storage)]
+    TIMER[Timer0 - 1ms System Tick]
+    USART[USART Debug]
+    I2C_M[I2C Master Driver]
+    LCD[LCD 1602 Driver]
+end
+
+%% ========== SLAVE ==========
+subgraph SLAVE["Arduino Nano (SLAVE)"]
+    I2C_S[I2C Slave Driver]
+    PWM[PWM Driver]
+    PUMP[Pump Control - Relays]
+    BUZ[Buzzer Driver]
+    LED[LED Driver]
+    GPIO[GPIO Driver]
+end
+
+%% ========== DATA FLOW ==========
+S1 --> ADC
+S2 --> ADC
+S3 --> ADC
+WL --> ADC
+BTN --> GPIO
+
+ADC --> CTRL
+TIMER --> CTRL
+
+CTRL --> EEPROM
+CTRL --> I2C_M
+CTRL --> USART
+CTRL --> LCD
+
+I2C_M <--> I2C_S
+
+I2C_S --> PWM
+PWM --> PUMP
+
+I2C_S --> BUZ
+I2C_S --> LED
+GPIO --> I2C_S
+```
+
+## Roadmap
+
+- [x] GPIO driver
+- [x] ADC driver
+- [x] EEPROM driver
+- [x] Interrupt driver
+- [x] Timer driver
+- [x] PWM driver
+- [x] I2C driver
+- [x] Lcd driver
+- [x] Pompe driver
+- [x] Senzor Umiditate driver
+- [x] LED driver
+
+
+## Structura Proiect
+
+```
+├── bsp/            # Board definitions (uno.h, nano.h)
+├── drivers/        # Hardware Abstraction Layer
+│   ├── adc/
+│   ├── button/
+│   ├── buzzer/
+│   ├── eeprom/
+│   ├── gpio/
+│   ├── i2c/
+│   ├── interrupt/
+│   ├── lcd/
+│   ├── led/
+│   ├── nivel apa/
+│   ├── pompe/
+│   ├── pwm/
+│   ├── s_umiditate/
+│   ├── timer/
+│   └── usart/
+├── src/            # Application source code (main.c)
+├── test/           # Unit tests & Mocks
+│   ├── mocks/      # Mock AVR registers for host testing
+│   ├── framework/  # Minimal test runner
+│   └── test_*.c    # Unit test files
+├── utils/          # Helper macros (BIT manipulations)
+└── Makefile        # Build configuration
+```
+
+## Build & Flash
+
+### Prerequisites
+
+- `avr-gcc` toolchain
+- `avrdude`
+- `make`
+
+### Comenzi
+| Comanda |  Descriere  |
+|---------|-------------|
+| `make all`   | Compile the project. |
+| `make flash` | Flash the firmware to the connected board. |
+| `make clean` | Remove build artifacts. |
+
+
+
+
+
+
