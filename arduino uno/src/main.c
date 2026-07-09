@@ -101,7 +101,7 @@ int main(void) {
 
             // Tratare comenzi actionare componente caroserie
             switch (comanda_primita) {
-                case 'L': // Usa Stanga
+                case 'U': // Usa Stanga primeste 'U'
                     if (usa_stanga_deschisa) {
                         SERVO_SetAngle(SERVO_CH_B, 0); 
                         usa_stanga_deschisa = 0;
@@ -111,7 +111,7 @@ int main(void) {
                     }
                     break;
                     
-                case 'R': // Usa Dreapta
+                case 'I': // Usa Dreapta primeste 'I'
                     if (usa_dreapta_deschisa) {
                         SERVO_SetAngle(SERVO_CH_A, 0); 
                         usa_dreapta_deschisa = 0;
