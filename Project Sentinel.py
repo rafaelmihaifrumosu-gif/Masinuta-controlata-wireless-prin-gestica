@@ -116,8 +116,9 @@ class RoverControlGUI:
         tk.Button(body_frame, text="Ciclu Faruri (H)", font=font_butoane, bg="#f1c40f", fg="black", command=lambda: self.trimite_comanda('H')).grid(row=2, column=0, sticky="nsew", padx=3, pady=3)
         tk.Button(body_frame, text="⚠️ Avarii (A)", font=font_butoane, bg="#c0392b", fg="white", command=lambda: self.trimite_comanda('A')).grid(row=2, column=1, sticky="nsew", padx=3, pady=3)
 
-        # --- Randul 3: Claxon (latit pe ambele coloane) ---
-        tk.Button(body_frame, text="🔍 Gasire Masina (C)", font=font_butoane, bg="#8e44ad", fg="white", command=lambda: self.trimite_comanda('C')).grid(row=3, column=0, columnspan=2, sticky="nsew", padx=3, pady=3)
+        # --- Randul 3: Claxon si Securitate ---
+        tk.Button(body_frame, text="🔍 Gasire Masina (C)", font=font_butoane, bg="#8e44ad", fg="white", command=lambda: self.trimite_comanda('C')).grid(row=3, column=0, sticky="nsew", padx=3, pady=3)
+        tk.Button(body_frame, text="🛡️ Mod Securitate (X)", font=font_butoane, bg="#2c3e50", fg="white", command=lambda: self.trimite_comanda('X')).grid(row=3, column=1, sticky="nsew", padx=3, pady=3)
 
         btn_stop = tk.Button(frame_dreapta, text="INCHIDE INTERFATA", bg="#7f8c8d", fg="white", font=font_titlu, command=self.inchide_aplicatie)
         btn_stop.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=20)
@@ -169,12 +170,12 @@ class RoverControlGUI:
             self.root.after(0, lambda: self.lbl_status.config(text="EROARE CONEXIUNE", fg="#e74c3c"))
 
     def trimite_comanda(self, comanda):
-        # Dictionar actualizat cu L, R si A
         dict_comenzi = {
             'U': "TOGGLE USA STANGA", 'I': "TOGGLE USA DREAPTA", 'H': "SCHIMBARE MOD FARURI",
             'C': "CAUTARE MASINA (BEEP)", '1': "PARCARE AUTOMATA FATA", '2': "PARCARE AUTOMATA SPATE",
             '3': "PARCARE LATERAL STANGA", '4': "PARCARE LATERAL DREAPTA", 'S': "STOP DE URGENTA",
-            'L': "SEMNALIZARE STANGA", 'R': "SEMNALIZARE DREAPTA", 'A': "AVARII"
+            'L': "SEMNALIZARE STANGA", 'R': "SEMNALIZARE DREAPTA", 'A': "AVARII",
+            'X': "MOD SECURITATE (ARMATA)"
         }
         self.lbl_comanda.config(text=dict_comenzi.get(comanda, f"Cod: {comanda}"))
         self.ultima_comanda = comanda
@@ -213,9 +214,12 @@ class RoverControlGUI:
                             
                     nr_degete = degete_ridicate.count(1)
                     
+                    # LOGICA GESTURILOR CORECTATA: 
+                    # Gesturile specifice (liste exacte) se verifica primele, inainte de cantitatea simpla (nr_degete)
                     if nr_degete == 0: comanda_curenta = 'S'      
                     elif degete_ridicate == [0, 1, 0, 0, 0]: comanda_curenta = 'U' # Index -> Usa Stanga
                     elif degete_ridicate == [0, 1, 1, 0, 0]: comanda_curenta = 'I' # Index + Mijloc -> Usa Dreapta
+                    elif degete_ridicate == [1, 1, 0, 0, 1]: comanda_curenta = 'X' # Deget Mare + Index + Mic -> Alarma
                     elif nr_degete == 3: comanda_curenta = 'H'    
                     elif nr_degete == 4: comanda_curenta = 'C'    
                     elif nr_degete == 5: pass 
