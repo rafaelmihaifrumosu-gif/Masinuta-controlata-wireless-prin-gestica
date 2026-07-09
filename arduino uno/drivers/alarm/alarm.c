@@ -44,7 +44,7 @@ void ALARM_Update(void) {
 
     // STAREA 1: MOD DE VEGHE
     if (stare_alarma == ALARM_ARMED) {
-        // Scanam senzorii de 10 ori pe secunda (100ms) pentru a nu suprasolicita bus-ul
+        // Scanam senzorii de 10 ori pe secunda (100ms)
         if (timp_curent - last_scan_time >= 100) {
             last_scan_time = timp_curent;
 
@@ -52,8 +52,7 @@ void ALARM_Update(void) {
             uint16_t d_spate = ULTRASONIC_GetDistance(1);
             uint16_t d_dreapta = ULTRASONIC_GetDistance(2);
 
-            // Daca orice obiect se apropie la mai putin de 5 cm, declansam alarma.
-            // Ignoram valoarea 0 (eroare hardware senzor) si 999 (out of range).
+            // Intruziune la sub 5 cm
             if ((d_fata > 0 && d_fata <= 5) || 
                 (d_spate > 0 && d_spate <= 5) || 
                 (d_dreapta > 0 && d_dreapta <= 5)) {
@@ -66,7 +65,7 @@ void ALARM_Update(void) {
 
     // STAREA 2: ALARMA DECLANSATA
     if (stare_alarma == ALARM_TRIGGERED) {
-        // Clipim buzzerul activ la intervale de 150ms (sunet de alarma de masina)
+        // Clipim buzzerul activ la intervale de 150ms
         if (timp_curent - last_toggle_time >= 150) {
             last_toggle_time = timp_curent;
             buzzer_state = !buzzer_state;
@@ -78,4 +77,4 @@ void ALARM_Update(void) {
             }
         }
     }
-}s
+}

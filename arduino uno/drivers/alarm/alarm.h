@@ -15,9 +15,7 @@ void ALARM_Disarm(void);
 // Functie non-blocanta care se pune in bucla while(1)
 void ALARM_Update(void);
 
-void ALARM_Disarm(void) {
-    stare_alarma = ALARM_OFF;
-    buzzer_state = 0;
-    GPIO_Write(UNO_D3, GPIO_LOW); 
-}
+// Returneaza 1 daca alarma suna, 0 daca nu
+uint8_t ALARM_IsTriggered(void);
+
 #endif // ALARM_H

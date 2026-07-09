@@ -35,7 +35,7 @@ else
 endif
 
 # Source Files
-SRC = src/main.c drivers/gpio/gpio.c drivers/adc/adc.c drivers/usart/usart.c drivers/button/button.c drivers/i2c/i2c_master.c drivers/i2c/i2c_slave.c drivers/buzzer/buzzer.c drivers/led/led.c drivers/interrupt/external_interrupt.c drivers/timer/timer0.c drivers/timer/timer1.c drivers/timer/timer2.c drivers/pwm/pwm.c drivers/eeprom/eeprom.c utils/delay.c drivers/ultrasonic/ultrasonic.c drivers/servo/servo.c drivers/motor/motor.c
+SRC = src/main.c drivers/gpio/gpio.c drivers/adc/adc.c drivers/usart/usart.c drivers/button/button.c drivers/i2c/i2c_master.c drivers/i2c/i2c_slave.c drivers/buzzer/buzzer.c drivers/led/led.c drivers/interrupt/external_interrupt.c drivers/timer/timer0.c drivers/timer/timer1.c drivers/timer/timer2.c drivers/pwm/pwm.c drivers/eeprom/eeprom.c utils/delay.c drivers/ultrasonic/ultrasonic.c drivers/servo/servo.c drivers/motor/motor.c drivers/alarm/alarm.c
 
 # Object Files
 # Replace .c extension with .o and prepend OBJDIR, keeping directory structure
@@ -65,6 +65,7 @@ directories:
 	@mkdir -p $(OBJDIR)/drivers/ultrasonic
 	@mkdir -p $(OBJDIR)/drivers/servo
 	@mkdir -p $(OBJDIR)/drivers/motor
+	@mkdir -p $(OBJDIR)/drivers/alarm
 $(TARGET).elf: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 

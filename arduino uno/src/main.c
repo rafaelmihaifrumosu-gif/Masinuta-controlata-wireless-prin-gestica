@@ -162,4 +162,67 @@ void Executa_Parcare_Lateral_Stanga(void) {
 }
 
 void Executa_Parcare_Lateral_Dreapta(void) {
+    // Variabile statice pentru a "tine minte" starea intre iteratiile buclei while(1)
+    static uint8_t pas = 0; 
+    static uint32_t timp_start = 0;
+
+    // Citim distantele
+    uint16_t d_fata = ULTRASONIC_GetDistance(0);
+    uint16_t d_dreapta = ULTRASONIC_GetDistance(2);
+
+    switch (pas) {
+        case 0: // PASUL 0: Cautare gol parcare
+            MOTOR_Drive(DIR_FATA, 120); // Mergem incet in fata
+            
+            // Daca distanta laterala creste brusc (peste 35cm inseamna ca am gasit un gol)
+            // Ne asiguram ca ignoram 999 (eroare senzor)
+            if (d_dreapta > 35 && d_dreapta != 999) {
+                pas = 1;
+                timp_start = Millis();
+            }
+            break;
+
+        case 1: // PASUL 1: Aliniere punte spate
+            // Mai mergem putin in fata ca masina sa nu loveasca "masina parcata" din spate cand roteste
+            MOTOR_Drive(DIR_FATA, 120);
+            
+            if (Millis() - timp_start > 400) { // Calibrare: aprox 400ms de inaintare
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 2;
+                timp_start = Millis();
+            }
+            break;
+
+        case 2: // PASUL 2: Rotire 90 grade Dreapta
+            // Motoarele stanga trag in fata, motoarele dreapta trag in spate
+            MOTOR_Drive(DIR_DREAPTA, 180); // Putere mai mare pentru rotire pe loc
+            
+            if (Millis() - timp_start > 650) { // Calibrare: cat timp ii ia sa faca EXACT 90 grade
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 3;
+            }
+            break;
+
+        case 3: // PASUL 3: Intrare in parcare 
+            // Acum masina e orientata cu fata spre marginea drumului.
+            // Inaintam pana cand senzorul frontal zice ca suntem aproape de bordura (12 cm).
+            if (d_fata > 12) {
+                MOTOR_Drive(DIR_FATA, 120);
+            } else {
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 4;
+                timp_start = Millis();
+            }
+            break;
+
+        case 4: // PASUL 4: Indreptare masina (Rotire 90 grade Stanga)
+            MOTOR_Drive(DIR_STANGA, 180); 
+            
+            if (Millis() - timp_start > 650) { // Acelasi timp de pivotare ca la Pasul 2
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 0;                 // Resetam starea pentru viitoarele parcari
+                mod_parcare_activ = '0'; // Dezactivam modul de parcare automat
+            }
+            break;
+    }
 }
