@@ -89,51 +89,53 @@ int main(void) {
                 continue; 
             }
             
-            if (comanda_primita == 'S') {
-                mod_parcare_activ = '0';
-                MOTOR_Drive(DIR_STOP, 0);
-                ALARM_Disarm(); // Resetam alarma la oprirea de urgenta
-                continue;
-            }
+           if (comanda_primita == 'S') {
+                 mod_parcare_activ = '0'; // Oprește orice parcare
+                 MOTOR_Drive(DIR_STOP, 0);
+                 ALARM_Disarm();
+            } 
+            else if (comanda_primita >= '1' && comanda_primita <= '4') {
+                 mod_parcare_activ = comanda_primita;
 
-            switch (comanda_primita) {
-                case 'X': // Mod Securitate Armata
-                    mod_parcare_activ = '0';
-                    MOTOR_Drive(DIR_STOP, 0); // Asigura-te ca masina sta pe loc
-                    ALARM_Arm();
-                    // Optional: Un bip scurt de confirmare a armarii
-                    BUZZER_Beep(100); 
-                    break;
+                switch (comanda_primita) {
+                    case 'X': // Mod Securitate Armata
+                        mod_parcare_activ = '0';
+                        MOTOR_Drive(DIR_STOP, 0); // Asigura-te ca masina sta pe loc
+                        ALARM_Arm();
+                        // Optional: Un bip scurt de confirmare a armarii
+                        BUZZER_Beep(100); 
+                        break;
 
-                case 'L': 
-                    if (usa_stanga_deschisa) {
-                        SERVO_SetAngle(SERVO_CH_B, 0); 
-                        usa_stanga_deschisa = 0;
-                    } else {
-                        SERVO_SetAngle(SERVO_CH_B, 90); 
-                        usa_stanga_deschisa = 1;
-                    }
-                    break;
-                    
-                case 'R': 
-                    if (usa_dreapta_deschisa) {
-                        SERVO_SetAngle(SERVO_CH_A, 0); 
-                        usa_dreapta_deschisa = 0;
-                    } else {
-                        SERVO_SetAngle(SERVO_CH_A, 90); 
-                        usa_dreapta_deschisa = 1;
-                    }
-                    break;
-                    
-                case 'C': 
-                    if (!secventa_claxon_activa) {
-                        secventa_claxon_activa = 1;
-                        pas_claxon = 0;
-                    }
-                    break;
+                    case 'L': 
+                        if (usa_stanga_deschisa) {
+                            SERVO_SetAngle(SERVO_CH_B, 0); 
+                            usa_stanga_deschisa = 0;
+                        } else {
+                            SERVO_SetAngle(SERVO_CH_B, 90); 
+                            usa_stanga_deschisa = 1;
+                        }
+                        break;
+                        
+                    case 'R': 
+                        if (usa_dreapta_deschisa) {
+                            SERVO_SetAngle(SERVO_CH_A, 0); 
+                            usa_dreapta_deschisa = 0;
+                        } else {
+                            SERVO_SetAngle(SERVO_CH_A, 90); 
+                            usa_dreapta_deschisa = 1;
+                        }
+                        break;
+                        
+                    case 'C': 
+                        if (!secventa_claxon_activa) {
+                            secventa_claxon_activa = 1;
+                            pas_claxon = 0;
+                        }
+                        break;
 
-                default:
-                    break;
+                    default:
+                        break;
+                }
             }
         }
     }
