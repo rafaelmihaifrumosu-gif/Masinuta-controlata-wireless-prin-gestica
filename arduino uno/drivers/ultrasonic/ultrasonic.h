@@ -16,7 +16,7 @@ void ULTRASONIC_Init(void);
  * Contine timeout-uri stricte pentru a nu bloca sistemul.
  * @return Distanta in centimetri (sau 999 in caz de eroare/out of range).
  */
-uint16_t ULTRASONIC_GetDistance(void);
+uint16_t ULTRASONIC_GetDistance(uint8_t senzor_id);
 
 /**
  * @brief Functie care trebuie apelata in bucla while(1) din main.
