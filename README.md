@@ -13,6 +13,8 @@ Acest repository documentează dezvoltarea unei masinuțe controlate prin gestur
 |----------|------------|
 | x4 | Motor reductor TT |
 | x4 | Roată plastic cu cauciuc |
+| x4 | Senzor Ultra Sonic HC-SR04 |
+| x4 | Servomotor SG90 |
 
 ---
 
@@ -28,8 +30,8 @@ Acest repository documentează dezvoltarea unei masinuțe controlate prin gestur
 ### 🤖 Control & electronică
 | Cantitate | Componentă |
 |----------|------------|
-| x1 | STM32 NUCLEO-F401RE board |
-| x1 | ESP-WROOM-32 (ESP32 board) |
+| x1 | Arduino Uno Board |
+| x1 | ES32 C6 |
 | x2 | Punte H dublă MX1508 DC |
 
 
