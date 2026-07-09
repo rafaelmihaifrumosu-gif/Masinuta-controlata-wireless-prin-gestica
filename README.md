@@ -200,8 +200,8 @@ Exemplu final recomandat (după verificare):
 | --------- | --------------------: |
 | Motor A   |           Stânga față |
 | Motor B   |          Stânga spate |
-| IN1 + IN3 |   D9 *(mișcare față)* |
-| IN2 + IN4 | D10 *(mișcare spate)* |
+| IN1 + IN3 |   D5 *(mișcare față)* |
+| IN2 + IN4 |  D6 *(mișcare spate)* |
 | +         |                   VCC |
 | -         |                   GND |
 
