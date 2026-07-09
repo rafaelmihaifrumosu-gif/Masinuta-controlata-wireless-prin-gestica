@@ -1,4 +1,3 @@
-
 #include "bsp/uno.h"
 #include "drivers/timer/timer0.h"
 #include "drivers/i2c/i2c_slave.h"
@@ -57,8 +56,8 @@ void Executa_Parcare_Lateral_Dreapta(void);
 int main(void) {
     // 1. Initializare hardware si drivere
     Timer0_Init();
-    MOTOR_Init();
-    BUZZER_Init();
+    MOTOR_Init(); // Driverul care controleaza cele 4 motoare DC
+    BUZZER_Init(); // Configurat pentru buzzer pasiv (PWM intern)
     SERVO_Init();
     ULTRASONIC_Init();
     i2c_slave_init(I2C_SLAVE_ADDR);
@@ -102,7 +101,7 @@ int main(void) {
 
             // Tratare comenzi actionare componente caroserie
             switch (comanda_primita) {
-                case 'U': // Usa Stanga
+                case 'L': // Usa Stanga
                     if (usa_stanga_deschisa) {
                         SERVO_SetAngle(SERVO_CH_B, 0); 
                         usa_stanga_deschisa = 0;
@@ -112,7 +111,7 @@ int main(void) {
                     }
                     break;
                     
-                case 'I': // Usa Dreapta
+                case 'R': // Usa Dreapta
                     if (usa_dreapta_deschisa) {
                         SERVO_SetAngle(SERVO_CH_A, 0); 
                         usa_dreapta_deschisa = 0;
