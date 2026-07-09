@@ -80,60 +80,44 @@ int main(void) {
         else if (mod_parcare_activ == '4') Executa_Parcare_Lateral_Dreapta();
 
         // --- CITIRE COMENZI I2C ---
+       // --- CITIRE COMENZI I2C ---
         if (i2c_slave_has_data(&comanda_primita)) {
             
-            if (comanda_primita == '1' || comanda_primita == '2' || 
-                comanda_primita == '3' || comanda_primita == '4') {
-                mod_parcare_activ = comanda_primita;
-                ALARM_Disarm(); // Dezactivam alarma daca se incepe o parcare
-                continue; 
+            // 1. Daca primim o comanda de actiune (U, I, L, R, C, X), 
+            // OPRIM automat orice parcare anterioara.
+            if (comanda_primita == 'U' || comanda_primita == 'I' || 
+                comanda_primita == 'L' || comanda_primita == 'R' || 
+                comanda_primita == 'C' || comanda_primita == 'X') {
+                mod_parcare_activ = '0';
+                MOTOR_Drive(DIR_STOP, 0);
             }
-            
-           if (comanda_primita == 'S') {
-                 mod_parcare_activ = '0'; // Oprește orice parcare
-                 MOTOR_Drive(DIR_STOP, 0);
-                 ALARM_Disarm();
+
+            // 2. Gestionare comenzi
+            if (comanda_primita == 'S') {
+                mod_parcare_activ = '0';
+                MOTOR_Drive(DIR_STOP, 0);
+                ALARM_Disarm();
             } 
             else if (comanda_primita >= '1' && comanda_primita <= '4') {
-                 mod_parcare_activ = comanda_primita;
-
+                mod_parcare_activ = comanda_primita;
+                ALARM_Disarm();
+            }
+            else {
                 switch (comanda_primita) {
-                    case 'X': // Mod Securitate Armata
-                        mod_parcare_activ = '0';
-                        MOTOR_Drive(DIR_STOP, 0); // Asigura-te ca masina sta pe loc
+                    case 'X':
                         ALARM_Arm();
-                        // Optional: Un bip scurt de confirmare a armarii
                         BUZZER_Beep(100); 
                         break;
-
                     case 'L': 
-                        if (usa_stanga_deschisa) {
-                            SERVO_SetAngle(SERVO_CH_B, 0); 
-                            usa_stanga_deschisa = 0;
-                        } else {
-                            SERVO_SetAngle(SERVO_CH_B, 90); 
-                            usa_stanga_deschisa = 1;
-                        }
+                        if (usa_stanga_deschisa) { SERVO_SetAngle(SERVO_CH_B, 0); usa_stanga_deschisa = 0; }
+                        else { SERVO_SetAngle(SERVO_CH_B, 90); usa_stanga_deschisa = 1; }
                         break;
-                        
                     case 'R': 
-                        if (usa_dreapta_deschisa) {
-                            SERVO_SetAngle(SERVO_CH_A, 0); 
-                            usa_dreapta_deschisa = 0;
-                        } else {
-                            SERVO_SetAngle(SERVO_CH_A, 90); 
-                            usa_dreapta_deschisa = 1;
-                        }
+                        if (usa_dreapta_deschisa) { SERVO_SetAngle(SERVO_CH_A, 0); usa_dreapta_deschisa = 0; }
+                        else { SERVO_SetAngle(SERVO_CH_A, 90); usa_dreapta_deschisa = 1; }
                         break;
-                        
                     case 'C': 
-                        if (!secventa_claxon_activa) {
-                            secventa_claxon_activa = 1;
-                            pas_claxon = 0;
-                        }
-                        break;
-
-                    default:
+                        if (!secventa_claxon_activa) { secventa_claxon_activa = 1; pas_claxon = 0; }
                         break;
                 }
             }
