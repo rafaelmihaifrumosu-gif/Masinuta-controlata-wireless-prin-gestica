@@ -161,10 +161,6 @@ Arhitectura proiectului este de tip **master–slave**:
 | SCL    |          A5 | GPIO 5 |
 
 
-Exemplu final recomandat (după verificare):
-
-* SDA → **GPIO X**
-* SCL → **GPIO Y**
 
 ---
 
