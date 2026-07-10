@@ -16,6 +16,7 @@ static uint8_t pas_claxon = 0;
 static uint32_t timp_claxon_anterior = 0;
 
 char mod_parcare_activ = '0'; 
+
 static uint8_t stare_sistem_alarma = 0;
 
 void Gestionare_Secventa_Claxon(void) {
