@@ -16,7 +16,6 @@ static uint8_t pas_claxon = 0;
 static uint32_t timp_claxon_anterior = 0;
 
 char mod_parcare_activ = '0'; 
-
 static uint8_t stare_sistem_alarma = 0;
 
 void Gestionare_Secventa_Claxon(void) {
@@ -91,20 +90,20 @@ int main(void) {
                         
                     case 'U': // Usa Stanga (Servo A)
                         if (usa_stanga_deschisa) { 
-                            SERVO_SetAngle(SERVO_CH_A, 90);  // Se inchide la loc (mijloc)
+                            SERVO_SetAngle(SERVO_CH_A, 90);  // Inchis
                             usa_stanga_deschisa = 0; 
                         } else { 
-                            SERVO_SetAngle(SERVO_CH_A, 0); // Se deschide spre exterior
+                            SERVO_SetAngle(SERVO_CH_A, 180); // Deschis spre exterior
                             usa_stanga_deschisa = 1; 
                         }
                         break;
                         
                     case 'I': // Usa Dreapta (Servo B)
                         if (usa_dreapta_deschisa) { 
-                            SERVO_SetAngle(SERVO_CH_B, 90);  // Se inchide la loc (mijloc)
+                            SERVO_SetAngle(SERVO_CH_B, 90);  // Inchis
                             usa_dreapta_deschisa = 0; 
                         } else { 
-                            SERVO_SetAngle(SERVO_CH_B, 180);   // Se deschide spre exterior (invers)
+                            SERVO_SetAngle(SERVO_CH_B, 0);   // Deschis spre exterior (invers)
                             usa_dreapta_deschisa = 1; 
                         }
                         break;
@@ -119,67 +118,116 @@ int main(void) {
     return 0;
 }
 
+// --- PARCARE SIMPLA CU FATA ---
 void Executa_Parcare_Fata(void) {
     static uint32_t last_scan = 0;
-    uint32_t timp_curent = Millis();
-    if (timp_curent - last_scan < 60) return; 
-    last_scan = timp_curent;
+    if (Millis() - last_scan < 50) return; 
+    last_scan = Millis();
 
     uint16_t distanta_fata = ULTRASONIC_GetDistance(0); 
-    if (distanta_fata == 999 || distanta_fata > 15) {
+    
+    // Merge drept cat timp e drum liber sau distanta e > 10 cm
+    if (distanta_fata == 999 || distanta_fata > 10) {
         MOTOR_Drive(DIR_FATA, 120); 
     } 
-    else if (distanta_fata > 0 && distanta_fata <= 15) {
+    // Se opreste fix cand atinge 10 cm (fara erori de 0)
+    else if (distanta_fata > 0 && distanta_fata <= 10) {
         MOTOR_Drive(DIR_STOP, 0); 
         mod_parcare_activ = '0'; 
     }
 }
 
+// --- PARCARE SIMPLA CU SPATELE ---
+// --- PARCARE CU SPATELE (ROTIRE 180 GRADE -> MARSARIER PANA LA ZID) ---
 void Executa_Parcare_Spate(void) {
     static uint8_t pas = 0; 
     static uint32_t timp_start = 0;
     static uint32_t last_scan = 0;
-    uint32_t timp_curent = Millis();
     
-    if (timp_curent - last_scan < 60) return;
-    last_scan = timp_curent;
+    if (Millis() - last_scan < 50) return;
+    last_scan = Millis();
 
     uint16_t d_spate = ULTRASONIC_GetDistance(1);
-    uint16_t d_dreapta = ULTRASONIC_GetDistance(2);
 
     switch (pas) {
-        case 0: 
-            MOTOR_Drive(DIR_FATA, 120); 
-            if (d_dreapta > 35 && d_dreapta != 999) { pas = 1; timp_start = Millis(); }
+        case 0: // PAS 0: Initializare cronometru pentru rotire
+            timp_start = Millis();
+            pas = 1;
             break;
-        case 1: 
-            MOTOR_Drive(DIR_FATA, 120);
-            if (Millis() - timp_start > 800) { MOTOR_Drive(DIR_STOP, 0); pas = 2; timp_start = Millis(); }
+
+        case 1: // PAS 1: INTOARCE 180 DE GRADE
+            MOTOR_Drive(DIR_STANGA, 180); // Pivotare pe loc la stanga
+            
+            // ATENTIE: Daca 650ms inseamna 90 de grade, atunci 1300ms 
+            // ar trebui sa insemne 180 de grade. Ajusteaza numarul 
+            // asta (1300) in sus sau in jos daca se intoarce prea mult/putin!
+            if (Millis() - timp_start > 1300) { 
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 2; // Trecem la mersul cu spatele
+            }
             break;
-        case 2: 
-            MOTOR_Drive(DIR_DREAPTA, 180); 
-            if (Millis() - timp_start > 650) { MOTOR_Drive(DIR_STOP, 0); pas = 3; }
-            break;
-        case 3: 
-            if (d_spate == 999 || d_spate > 12) { MOTOR_Drive(DIR_SPATE, 120); } 
-            else if (d_spate > 0 && d_spate <= 12) { MOTOR_Drive(DIR_STOP, 0); pas = 0; mod_parcare_activ = '0'; }
+
+        case 2: // PAS 2: DA CU SPATELE PANA LA 10 CM DE ZID
+            // Cat timp drumul e liber sau mai mare de 10 cm
+            if (d_spate > 10 || d_spate == 999) {
+                MOTOR_Drive(DIR_SPATE, 120);
+            } 
+            // Am atins pragul de 10 cm fata de zidul din spate
+            else if (d_spate > 0 && d_spate <= 10) {
+                MOTOR_Drive(DIR_STOP, 0);
+                
+                // Am terminat manevra cu succes!
+                pas = 0;                 
+                mod_parcare_activ = '0'; 
+            }
             break;
     }
 }
-
 void Executa_Parcare_Lateral_Stanga(void) {}
 
+// --- PARCARE LATERALA (SECVENTA FRONTALA -> ROTIRE -> SPATE) ---
 void Executa_Parcare_Lateral_Dreapta(void) {
     static uint8_t pas = 0; 
     static uint32_t timp_start = 0;
+    static uint32_t last_scan = 0;
+    
+    if (Millis() - last_scan < 50) return;
+    last_scan = Millis();
+
     uint16_t d_fata = ULTRASONIC_GetDistance(0);
-    uint16_t d_dreapta = ULTRASONIC_GetDistance(2);
+    uint16_t d_spate = ULTRASONIC_GetDistance(1);
 
     switch (pas) {
-        case 0: MOTOR_Drive(DIR_FATA, 120); if (d_dreapta > 35 && d_dreapta != 999) { pas = 1; timp_start = Millis(); } break;
-        case 1: MOTOR_Drive(DIR_FATA, 120); if (Millis() - timp_start > 400) { MOTOR_Drive(DIR_STOP, 0); pas = 2; timp_start = Millis(); } break;
-        case 2: MOTOR_Drive(DIR_DREAPTA, 180); if (Millis() - timp_start > 650) { MOTOR_Drive(DIR_STOP, 0); pas = 3; } break;
-        case 3: if (d_fata > 12) { MOTOR_Drive(DIR_FATA, 120); } else { MOTOR_Drive(DIR_STOP, 0); pas = 4; timp_start = Millis(); } break;
-        case 4: MOTOR_Drive(DIR_STANGA, 180); if (Millis() - timp_start > 650) { MOTOR_Drive(DIR_STOP, 0); pas = 0; mod_parcare_activ = '0'; } break;
+        case 0: // PAS 1: Mergi in fata pana dai de zid (la 15cm)
+            if (d_fata > 15 || d_fata == 999) {
+                MOTOR_Drive(DIR_FATA, 120);
+            } else if (d_fata > 0 && d_fata <= 15) {
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 1;
+                timp_start = Millis();
+            }
+            break;
+
+        case 1: // PAS 2: Intoarce 90 de grade
+            MOTOR_Drive(DIR_STANGA, 180); // Modifica DIR_STANGA in DIR_DREAPTA daca vrei sa se roteasca invers
+            
+            // ATENTIE: Calibreaza 650-ul ca sa faca exact 90 de grade!
+            if (Millis() - timp_start > 650) { 
+                MOTOR_Drive(DIR_STOP, 0);
+                pas = 2;
+            }
+            break;
+
+        case 2: // PAS 3: Da cu spatele pana la 10 cm de zid
+            if (d_spate > 10 || d_spate == 999) {
+                MOTOR_Drive(DIR_SPATE, 120);
+            } else if (d_spate > 0 && d_spate <= 10) {
+                MOTOR_Drive(DIR_STOP, 0);
+                
+                // Finalizare manevra!
+                pas = 0;                 
+                mod_parcare_activ = '0'; 
+            }
+            break;
     }
 }
