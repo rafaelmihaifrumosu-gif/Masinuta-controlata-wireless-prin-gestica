@@ -90,23 +90,18 @@ uint16_t ULTRASONIC_GetDistance(uint8_t senzor_id) {
 
 void ULTRASONIC_Update(void) {
     static uint32_t last_scan_time = 0;
-    static uint32_t last_beep_time = 0; // NOU: Cronometru anti-spam pentru buzzer
+    static uint32_t last_beep_time = 0;
 
-    // Verificam senzorul frontal o data la 100ms
     if (Millis() - last_scan_time >= 100) {
         last_scan_time = Millis();
-
         uint16_t distanta = ULTRASONIC_GetDistance(0);
 
-        // Filtram erorile: Ignoram distanta 0, distantele sub 7 (caroseria) si 999 (liber)
-        if (distanta > 7 && distanta < 15 && distanta != 999) { 
-
-            // 1. Oprim fizic masina (Asta se intampla instant)
-            MOTOR_Drive(DIR_STOP, 0);
-
-            // 2. Partea de sunet cu Cooldown de 1 secunda (1000 ms)
+        // DOAR DACA e foarte, foarte aproape (sub 7 cm) si evitam erorile (0)
+        if (distanta > 2 && distanta <= 7) { 
+            MOTOR_Drive(DIR_STOP, 0); // Siguranta bruta
+            
             if (Millis() - last_beep_time >= 1000) {
-                BUZZER_Beep(50); // Un bip foarte scurt si elegant (50ms)
+                BUZZER_Beep(50); // Un singur ticăit la o secunda
                 last_beep_time = Millis();
             }
         }
