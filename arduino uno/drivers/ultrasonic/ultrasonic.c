@@ -25,14 +25,15 @@ void ULTRASONIC_Init(void) {
 }
 
 // Functie auxiliara interna care primeste exact Portul si Pinul dorit
+// Functie auxiliara interna care primeste exact Portul si Pinul dorit
 static uint16_t masoara_ecou(gpio_port_t port, uint8_t pin) {
-    uint32_t timeout = 30000; // Marim marja la 30ms (suficient pentru ~5 metri)
+    uint32_t timeout = 30000; 
 
-    // 1. Asteptam inceperea ecoului (ca senzorul sa ridice pinul pe HIGH)
+    // 1. Asteptam inceperea ecoului
     while(GPIO_Read(port, pin) == GPIO_LOW) {
         timeout--;
-        if(timeout == 0) return 999; // Senzor neconectat sau nu raspunde
-        _delay_us(1); // <--- OBLIGATORIU: Previne epuizarea instanta a buclei
+        if(timeout == 0) return 999; 
+        _delay_us(1); 
     }
 
     // 2. Masuram durata pulsului HIGH
@@ -41,44 +42,73 @@ static uint16_t masoara_ecou(gpio_port_t port, uint8_t pin) {
     while(GPIO_Read(port, pin) == GPIO_HIGH) {
         durata++;
         timeout--;
-        if(timeout == 0) return 999; // Nimic in raza (semnal pierdut in spatiu)
+        if(timeout == 0) return 999; 
         _delay_us(1); 
     }
 
-    // Transformam in centimetri (formula standard HC-SR04)
-    return (uint16_t)(durata / 58);
+    // Transformam in centimetri
+    uint16_t distanta_cm = (uint16_t)(durata / 58);
+
+    // --- NOU: FILTRU PENTRU CAROSERIE (DEADZONE) ---
+    // Daca distanta masurata e intre 1 si 4 cm, este clar marginea sasiului.
+    // O ignoram si returnam 999 (drum liber).
+    if (distanta_cm > 0 && distanta_cm <= 4) {
+        return 999;
+    }
+
+    return distanta_cm;
 }
 
 uint16_t ULTRASONIC_GetDistance(uint8_t senzor_id) {
-    // 1. Toti senzorii primesc trigger-ul simultan
+    // 1. Ne asiguram ca trigger-ul este oprit inainte de a trage
+    GPIO_Write(TRIG_COMUN_PIN, GPIO_LOW);
+    _delay_us(2);
+
+    // 2. Tragem un puls scurt de 10us pentru TOȚI senzorii simultan
     GPIO_Write(TRIG_COMUN_PIN, GPIO_HIGH);
     _delay_us(10);
     GPIO_Write(TRIG_COMUN_PIN, GPIO_LOW);
 
-    // 2. Apelam functia auxiliara. Aici macro-urile se desfac automat!
-    // Ex: masoara_ecou(UNO_D13) devine masoara_ecou(GPIO_PORTB, 5)
+    uint16_t distanta = 999;
+
+    // 3. Citim doar ecoul senzorului de care avem nevoie acum
     if (senzor_id == 0) {
-        return masoara_ecou(ECHO_FATA_PIN);
+        distanta = masoara_ecou(ECHO_FATA_PIN);
     } else if (senzor_id == 1) {
-        return masoara_ecou(ECHO_SPATE_PIN);
+        distanta = masoara_ecou(ECHO_SPATE_PIN);
     } else if (senzor_id == 2) {
-        return masoara_ecou(ECHO_DREAPTA_PIN);
+        distanta = masoara_ecou(ECHO_DREAPTA_PIN);
     }
 
-    return 999; // ID invalid
+    // 4.  MAGIC FIX: PERIOADA DE LINIȘTE 
+    // Asteptam 35 de milisecunde pentru ca toate undele sonore sa fie
+    // absorbite de pereti inainte ca urmatoarea functie sa traga iar.
+    _delay_ms(35);
+
+    return distanta;
 }
 
 void ULTRASONIC_Update(void) {
-    // Verificam obstacolele o data la 100ms doar pentru partea din fata
+    static uint32_t last_scan_time = 0;
+    static uint32_t last_beep_time = 0; // NOU: Cronometru anti-spam pentru buzzer
+
+    // Verificam senzorul frontal o data la 100ms
     if (Millis() - last_scan_time >= 100) {
         last_scan_time = Millis();
 
         uint16_t distanta = ULTRASONIC_GetDistance(0);
 
-        // Protectie coliziune (DISTANTA_MINIMA_CM trebuie sa fie definita in ultrasonic.h)
-        if (distanta < DISTANTA_MINIMA_CM) {
+        // Filtram erorile: Ignoram distanta 0, distantele sub 7 (caroseria) si 999 (liber)
+        if (distanta > 7 && distanta < 15 && distanta != 999) { 
+
+            // 1. Oprim fizic masina (Asta se intampla instant)
             MOTOR_Drive(DIR_STOP, 0);
-            BUZZER_Beep(150);
+
+            // 2. Partea de sunet cu Cooldown de 1 secunda (1000 ms)
+            if (Millis() - last_beep_time >= 1000) {
+                BUZZER_Beep(50); // Un bip foarte scurt si elegant (50ms)
+                last_beep_time = Millis();
+            }
         }
     }
 }
