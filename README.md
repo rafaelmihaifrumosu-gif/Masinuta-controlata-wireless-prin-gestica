@@ -43,7 +43,6 @@ Proiectul constă într-o mașinuță robotică echipată cu:
 * **ESP32-C6** pentru comunicație și controlul funcțiilor auxiliare
 * **Arduino Uno** pentru controlul motoarelor și al senzorilor
 
-Sistemul este alimentat din acumulatori Li-Ion, iar tensiunile necesare sunt adaptate prin convertoare **LM2596** și **MT3608**.
 
 ---
 
@@ -251,7 +250,6 @@ Exemplu final recomandat (după verificare):
 
 # Structura repository-ului
 
-O structură recomandată pentru repo ar putea fi:
 
 ```text
 .
