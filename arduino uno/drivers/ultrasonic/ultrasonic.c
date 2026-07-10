@@ -7,8 +7,8 @@
 #include <util/delay.h>
 
 // Mapam conexiunile hardware
-#define TRIG_COMUN_PIN UNO_D12
-#define ECHO_FATA_PIN  UNO_D13
+#define TRIG_COMUN_PIN UNO_A1
+#define ECHO_FATA_PIN  UNO_A2
 #define ECHO_SPATE_PIN UNO_A0
 #define ECHO_DREAPTA_PIN UNO_A3
 
@@ -26,25 +26,26 @@ void ULTRASONIC_Init(void) {
 
 // Functie auxiliara interna care primeste exact Portul si Pinul dorit
 static uint16_t masoara_ecou(gpio_port_t port, uint8_t pin) {
-    uint16_t timeout = 10000;
-    
-    // 1. Asteptam inceperea ecoului
+    uint32_t timeout = 30000; // Marim marja la 30ms (suficient pentru ~5 metri)
+
+    // 1. Asteptam inceperea ecoului (ca senzorul sa ridice pinul pe HIGH)
     while(GPIO_Read(port, pin) == GPIO_LOW) {
         timeout--;
-        if(timeout == 0) return 999; // Senzor neconectat
+        if(timeout == 0) return 999; // Senzor neconectat sau nu raspunde
+        _delay_us(1); // <--- OBLIGATORIU: Previne epuizarea instanta a buclei
     }
 
     // 2. Masuram durata pulsului HIGH
     uint32_t durata = 0;
-    timeout = 20000; 
+    timeout = 30000; 
     while(GPIO_Read(port, pin) == GPIO_HIGH) {
         durata++;
         timeout--;
-        if(timeout == 0) return 999; // Nimic in raza
+        if(timeout == 0) return 999; // Nimic in raza (semnal pierdut in spatiu)
         _delay_us(1); 
     }
 
-    // Transformam in centimetri
+    // Transformam in centimetri (formula standard HC-SR04)
     return (uint16_t)(durata / 58);
 }
 
